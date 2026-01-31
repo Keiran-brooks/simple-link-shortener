@@ -1,0 +1,20 @@
+{
+  "name": "simple-link-shortener",
+  "version": "1.0.0",
+  "description": "A link shortener ",
+  "homepage": "https://github.com/Keiran-brooks/simple-link-shortener#readme",
+  "bugs": {
+    "url": "https://github.com/Keiran-brooks/simple-link-shortener/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Keiran-brooks/simple-link-shortener.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
