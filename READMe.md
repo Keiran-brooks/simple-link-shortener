@@ -4,6 +4,10 @@ This a simple link shortener I wrote as a challenge to myself to learn basic HTT
 To run this you will need Node.JS.
 To run you need to download or clone the repo and run:
 
-    node index.js
+    cp example.env .env
+
+Put your Postgresql database information into the .env and run:
+
+    node --env-file=.env index.js
   
 
