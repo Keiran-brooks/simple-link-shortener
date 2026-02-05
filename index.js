@@ -13,7 +13,6 @@ const client = new pg.Client({
 })
 
 client.connect();
-let shouldRedirect = true
 
 const server = http.createServer(async (request, response) => {
 
@@ -27,6 +26,8 @@ const server = http.createServer(async (request, response) => {
   catch (err){
     console.log(err);
   }
+
+  const shouldRedirect = Boolean(redirectURL);
 
   if (shouldRedirect){
     response.writeHead(308, { 'Content-Type': 'text/plain', 'location': redirectURL});
@@ -53,14 +54,12 @@ server.listen(3000, () => {
 });
 
 async function resolveRequest(requestURL){
-  redirectURL = '';
   if(requestURL.length != 6){
-    shouldRedirect = false
-    return;
+    return '';
   }
   try {
   	const result = await client.query(`SELECT * from ${process.env.DATABASETABLENAME} where shorturl = '` + requestURL.replace('/', '') +"';");
-  	redirectURL = 'https://' + result.rows[0]['longurl'];
+  	return 'https://' + result.rows[0]['longurl'];
   }
   catch (err) {
     console.log('DB error: ' + err)
@@ -68,5 +67,5 @@ async function resolveRequest(requestURL){
     
   }
 
-  return redirectURL;
+  return '';
 }
