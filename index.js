@@ -13,20 +13,39 @@ const client = new pg.Client({
 })
 
 client.connect();
+let shouldRedirect = true
 
 const server = http.createServer(async (request, response) => {
 
   const { url, method } = request;
 
+  let redirectURL = '';
+
   try {
-    const redirectURL = await resolveRequest(url)
-  } 
+    redirectURL = await resolveRequest(url);
+  }
   catch (err){
-    console.log(err)
+    console.log(err);
   }
 
-  response.writeHead(308, { 'Content-Type': 'text/plain', 'location': redirectURL});
-  response.end(`You made a ${method} request to ${url}`);
+  if (shouldRedirect){
+    response.writeHead(308, { 'Content-Type': 'text/plain', 'location': redirectURL});
+    response.end(`You made a ${method} request to ${url}`);
+  }
+  else{
+    
+    const requestedPath = url === '/' ? '/index.html' : url;
+    
+    
+    
+    await fs.readFile('html' + requestedPath, function (err, data){
+      if(err == null) {
+        response.writeHead(200, {"content-type": `text/html`});
+        response.write(data);
+        response.end();
+      }
+    });
+  }
 });
 
 server.listen(3000, () => {
@@ -35,18 +54,18 @@ server.listen(3000, () => {
 
 async function resolveRequest(requestURL){
   redirectURL = '';
-
-  console.log(requestURL);
-  requestURL = requestURL.replace('/', '')
-  console.log(requestURL);
-
+  if(requestURL.length != 6){
+    shouldRedirect = false
+    return;
+  }
   try {
-  	const result = await client.query("SELECT * from links where shorturl = '" + requestURL+"';");
+  	const result = await client.query(`SELECT * from ${process.env.DATABASETABLENAME} where shorturl = '` + requestURL.replace('/', '') +"';");
   	redirectURL = 'https://' + result.rows[0]['longurl'];
   }
   catch (err) {
     console.log('DB error: ' + err)
     console.log('URL doesnt exit or db error')
+    
   }
 
   return redirectURL;
