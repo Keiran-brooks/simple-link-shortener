@@ -1,5 +1,5 @@
 const http = require('http');
-const fs = require('fs/promises'); // Use promises version of fs
+const fs = require('fs/promises'); 
 const pg = require('pg');
 
 const client = new pg.Client({
@@ -83,61 +83,15 @@ async function resolveWebRequest(requestURL) {
     const queryText = `SELECT * from links where shorturl = $1;`;
     const result = await client.query(queryText, [shortCode]);
     
-    // CRITICAL FIX: Check if the row actually exists before trying to read it
+    
     if (result.rows.length > 0) {
       return 'https://' + result.rows[0]['longurl'];
     }
     
-    return ''; // Return empty string if no matching URL is found in the DB
+    return ''; 
   } catch (err) {
     console.error('DB error: ', err);
     return '';
   }
 }
 
-// async function resolveAPIRequest(requestURL) {
-
-//   console.log("Request URL:", requestURL);
-  
-//   if(shortCode == "api") {
-//     return 'api'
-//   }
-//   if (shortCode.length !== 5) {
-
-//     return '';
-
-//   }
-
-
-
-//   try {
-
-   
-
-//     const queryText = `SELECT * from links where shorturl = $1;`;
-
-//     const result = await client.query(queryText, [shortCode]);
-
-    
-
-//     // CRITICAL FIX: Check if the row actually exists before trying to read it
-
-//     if (result.rows.length > 0) {
-
-//       return 'https://' + result.rows[0]['longurl'];
-
-//     }
-
-    
-
-//     return ''; // Return empty string if no matching URL is found in the DB
-
-//   } catch (err) {
-
-//     console.error('DB error: ', err);
-
-//     return '';
-
-//   }
-
-// }
