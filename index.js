@@ -2,6 +2,8 @@ const http = require('http');
 const fs = require('fs/promises'); 
 const pg = require('pg');
 
+const hostURL = process.env.DOMAIN;
+
 const client = new pg.Client({
   user: process.env.DATABASEUSER,
   password: process.env.DATABASEPASSWORD,
@@ -34,7 +36,6 @@ const server = http.createServer(async (request, response) => {
     const filePath = 'html' + requestedPath;
     
     try {
-      // Replaced the broken callback with a proper await
       const data = await fs.readFile(filePath);
       
       // Determine content type (basic check for css/js/html)
@@ -53,9 +54,16 @@ const server = http.createServer(async (request, response) => {
 });
 
 const API = http.createServer(async (request, response) => {
+  
   const { url, method } = request;
-  response.writeHead(200, { "Content-Type": "application/json" });
-  response.end(JSON.stringify({ status: "ok" }));
+  if(method === 'POST' && url === '/api/shorten') {
+    
+    shortURL = await insertURL()
+    //TODO: fix this shit lol  
+
+  }
+  response.writeHead(200, { "Content-Type": "application/json",  });
+  response.end(JSON.stringify({ status: "ok", url: `${hostURL}/${shortURL}` }));
   
 });
 
@@ -93,5 +101,11 @@ async function resolveWebRequest(requestURL) {
     console.error('DB error: ', err);
     return '';
   }
+}
+
+async function insertURL(unshortenedURL) {
+  const queryText = `INSERT INTO links (longurl) VALUES ($1) RETURNING shorturl;`;
+  const result = await client.query(queryText, [unshortenedURL]);
+  return result.rows[0].shorturl;
 }
 
