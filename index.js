@@ -56,14 +56,19 @@ const server = http.createServer(async (request, response) => {
 const API = http.createServer(async (request, response) => {
   
   const { url, method } = request;
+
   if(method === 'POST' && url === '/api/shorten') {
     
     shortURL = await insertURL()
     //TODO: fix this shit lol  
+    response.writeHead(200, { "Content-Type": "application/json",  });
+    response.end(JSON.stringify({ status: "ok", url: `${hostURL}/${shortURL}` }));  
+  }
+  else{
+    response.writeHead(204, { "Content-Type": "application/json",  });
+    response.end(JSON.stringify({ status: "No Content" }));
 
   }
-  response.writeHead(200, { "Content-Type": "application/json",  });
-  response.end(JSON.stringify({ status: "ok", url: `${hostURL}/${shortURL}` }));
   
 });
 
