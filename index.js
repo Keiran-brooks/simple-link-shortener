@@ -1,5 +1,6 @@
 const http = require('http');
-const fs = require('fs/promises'); 
+const crypto = require('crypto');
+const fs = require('fs/promises');
 const pg = require('pg');
 
 const hostURL = process.env.DOMAIN;
@@ -34,10 +35,10 @@ const server = http.createServer(async (request, response) => {
   } else {
     const requestedPath = url === '/' ? '/index.html' : url;
     const filePath = 'html' + requestedPath;
-    
+
     try {
       const data = await fs.readFile(filePath);
-      
+
       // Determine content type (basic check for css/js/html)
       let contentType = 'text/html';
       if (filePath.endsWith('.css')) contentType = 'text/css';
@@ -54,22 +55,37 @@ const server = http.createServer(async (request, response) => {
 });
 
 const API = http.createServer(async (request, response) => {
-  
   const { url, method } = request;
 
-  if(method === 'POST' && url === '/api/shorten') {
-    
-    shortURL = await insertURL()
-    //TODO: fix this shit lol  
-    response.writeHead(200, { "Content-Type": "application/json",  });
-    response.end(JSON.stringify({ status: "ok", url: `${hostURL}/${shortURL}` }));  
+  if (method === 'POST' && url === '/api/shorten') {
+    let data;
+
+    try {
+      const body = await getRequestBody(request);
+      data = JSON.parse(body);
+    } catch (err) {
+      response.writeHead(400, { "Content-Type": "application/json" });
+      response.end(JSON.stringify({ status: "error", message: "Invalid JSON body" }));
+      return;
+    }
+
+    if (!data.url) {
+      response.writeHead(400, { "Content-Type": "application/json" });
+      response.end(JSON.stringify({ status: "error", message: "Missing url" }));
+      return;
+    }
+
+    const shortURL = await insertURL(data.url);
+
+    response.writeHead(200, { "Content-Type": "application/json" });
+    response.end(JSON.stringify({ status: "ok", url: `${hostURL}/${shortURL}` }));
   }
-  else{
-    response.writeHead(204, { "Content-Type": "application/json",  });
+  else {
+    response.writeHead(204, { "Content-Type": "application/json" });
     response.end(JSON.stringify({ status: "No Content" }));
 
   }
-  
+
 });
 
 server.listen(8080, () => {
@@ -86,22 +102,22 @@ async function resolveWebRequest(requestURL) {
   const shortCode = requestURL.replace('/', '');
   console.log("Short code:", shortCode);
   console.log("Request URL:", requestURL);
-  
+
   if (shortCode.length !== 5) {
     return '';
   }
 
   try {
-   
+
     const queryText = `SELECT * from links where shorturl = $1;`;
     const result = await client.query(queryText, [shortCode]);
-    
-    
+
+
     if (result.rows.length > 0) {
       return 'https://' + result.rows[0]['longurl'];
     }
-    
-    return ''; 
+
+    return '';
   } catch (err) {
     console.error('DB error: ', err);
     return '';
@@ -109,8 +125,30 @@ async function resolveWebRequest(requestURL) {
 }
 
 async function insertURL(unshortenedURL) {
-  const queryText = `INSERT INTO links (longurl) VALUES ($1) RETURNING shorturl;`;
-  const result = await client.query(queryText, [unshortenedURL]);
-  return result.rows[0].shorturl;
+  const shortURL = generateShortCode();
+  const strippedUrl = unshortenedURL.replace(/^https?:\/\//, '');
+  const queryText = `INSERT INTO links (shorturl, longurl) VALUES ($1, $2) RETURNING shorturl;`;
+  const result = await client.query(queryText, [shortURL, strippedUrl]);
+  return result.rows[0].shorturl || shortURL;
+}
+
+function getRequestBody(request) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+
+    request.on('data', (chunk) => {
+      body += chunk;
+    });
+
+    request.on('end', () => {
+      resolve(body);
+    });
+
+    request.on('error', reject);
+  });
+}
+
+function generateShortCode() {
+  return crypto.randomBytes(4).toString('base64url').slice(0, 5);
 }
 
