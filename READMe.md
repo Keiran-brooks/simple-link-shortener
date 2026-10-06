@@ -18,4 +18,4 @@ Put your Postgresql database information into the .env and run:
   
 
 ## AI usage in this project:
-The only use of AI is to make the setup-db.sh file, no other files has been created with AI.
+The only use of AI is to make the setup-db.sh file, no other files has been created or modified with AI.
