@@ -13,7 +13,7 @@ const client = new pg.Client({
   database: process.env.DATABASENAME,
 });
 
-//Catch connection errors so the app doesn't silently fail
+// Catch connection errors so the app doesnt silently fail
 client.connect().catch(err => console.error("Database connection error:", err));
 
 const server = http.createServer(async (request, response) => {
@@ -47,7 +47,7 @@ const server = http.createServer(async (request, response) => {
       response.writeHead(200, { "Content-Type": contentType });
       response.end(data);
     } catch (err) {
-      // FIX: Close the connection if the file is missing so the browser doesn't hang
+      // Close the connection if the file is missing so the browser doesn't hang
       response.writeHead(404, { "Content-Type": "text/plain" });
       response.end("404 - Not Found");
     }
@@ -130,6 +130,12 @@ async function insertURL(unshortenedURL) {
   const queryText = `INSERT INTO links (shorturl, longurl) VALUES ($1, $2) RETURNING shorturl;`;
   const result = await client.query(queryText, [shortURL, strippedUrl]);
   return result.rows[0].shorturl || shortURL;
+}
+async function removeURL() {
+
+  const URLToRemove = ''
+  const queryText = `DELETE FROM links WHERE shorturl = $1;`;
+  const result = await client.query(queryText, [URLToRemove]);
 }
 
 function getRequestBody(request) {
